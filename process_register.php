@@ -2,7 +2,7 @@
 // Simple database connection
 $serverName = "tcp:week4-sql-server-matthewh.database.windows.net,1433";
 $connectionOptions = array(
-	"Database" => "myDatabase",
+	"Database" => "mydatabase",
 	"Uid" => "myadmin",
 	"PWD" => "Pa$$'w0rd1.",
 	"Encrypt" => 1,
