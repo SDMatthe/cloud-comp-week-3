@@ -4,7 +4,7 @@ $serverName = "tcp:week4-sql-server-matthewh.database.windows.net,1433";
 $connectionOptions = array(
 	"Database" => "mydatabase",
 	"Uid" => "myadmin",
-	"PWD" => "Pa$$'w0rd1.",
+	"PWD" => "C*uldronlake10",
 	"Encrypt" => 1,
 	"TrustServerCertificate" => 0
 );
