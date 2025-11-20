@@ -4,7 +4,7 @@ $serverName = "tcp:matth-cloud-comp-assignment.database.windows.net,1433";
 $connectionOptions = array(
 	"Database" => "mydatabase",
 	"Uid" => "myadmin",
-	"PWD" => "C*uldronlake10",
+	"PWD" => "C*uldronLake10",
 	"Encrypt" => 1,
 	"TrustServerCertificate" => 0
 );
