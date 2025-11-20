@@ -315,16 +315,16 @@
 					<a href="index.php" class="nav-link active">Home</a>
 				</li>
 				<li class="nav-item">
-					<a href="productcontroller.php" class="nav-link">Shop</a>
+					<a href="products.php" class="nav-link">Shop</a>
 				</li>
 				<li class="nav-item">
-					<a href="cartcontroller.php" class="nav-link">🛒 Cart</a>
+					<a href="cart.php" class="nav-link">Basket</a>
 				</li>
 				<li class="nav-item">
-					<a href="WishlistController.php" class="nav-link">❤️ Wishlist</a>
+					<a href="wishlist.php" class="nav-link">Wishlist</a>
 				</li>
 				<li class="nav-item">
-					<a href="OrderTrackingController.php" class="nav-link">📦 Orders</a>
+					<a href="orders.php" class="nav-link">Orders</a>
 				</li>
 			</ul>
 
