@@ -1,6 +1,6 @@
 <?php
 // Simple database connection
-$serverName = "tcp:week4-sql-server-matthewh.database.windows.net,1433";
+$serverName = "tcp:matth-cloud-comp-assignment.database.windows.net,1433";
 $connectionOptions = array(
 	"Database" => "mydatabase",
 	"Uid" => "myadmin",
