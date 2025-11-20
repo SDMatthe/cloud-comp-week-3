@@ -308,7 +308,7 @@
 	<!-- Navigation Menu -->
 	<nav class="navbar">
 		<div class="navbar-container">
-			<a href="index.php" class="navbar-logo">🛍️ ShopShpere</a>
+			<a href="index.php" class="navbar-logo">ShopSphere</a>
 
 			<ul class="nav-menu">
 				<li class="nav-item">
@@ -330,22 +330,30 @@
 
 			<!-- Authentication Links -->
 			<div class="nav-auth">
-				<?php
-					session_start();
-					if (isset($_SESSION['user_id'])) {
-						// User is logged in
-						echo '<div class="user-info">';
-						echo '<span>' . htmlspecialchars($_SESSION['user_name'] ?? 'User') . '</span>';
-						echo '<div class="user-icon">' . substr(htmlspecialchars($_SESSION['user_name'] ?? 'U'), 0, 1) . '</div>';
-						echo '</div>';
-						echo '<a href="logout.php" class="btn-logout">Logout</a>';
-					} else {
-						// User is not logged in
-						echo '<a href="login.php" class="btn-login">Login</a>';
-						echo '<a href="register.php" class="btn-signup">Sign Up</a>';
-					}
-				?>
-			</div>
+                <?php
+                    if (isset($_SESSION['user_id'])) {
+                        // User is logged in
+                        $user_initial = strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1));
+                        ?>
+                        <div class="user-dropdown">
+                            <div class="user-info">
+                                <div class="user-avatar"><?php echo htmlspecialchars($user_initial); ?></div>
+                                <div class="user-name">
+                                    <span class="user-name-text"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?></span>
+                                    <span class="user-email-text"><?php echo htmlspecialchars($_SESSION['user_email'] ?? ''); ?></span>
+                                </div>
+                            </div>
+                        </div>
+                        <?php
+                    } else {
+                        // User is not logged in
+                        ?>
+                        <a href="auth.php?action=login" class="btn-login">Login</a>
+                        <a href="register.php" class="btn-signup">Sign Up</a>
+                        <?php
+                    }
+                ?>
+            </div>
 
 			<!-- Hamburger Menu for Mobile -->
 			<div class="hamburger">
