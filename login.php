@@ -144,30 +144,11 @@ if (isset($_SESSION['user_id']) && $action === 'login') {
         input[type="email"]:focus,
         input[type="password"]:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #3498db;
             box-shadow: 0 0 5px rgba(102, 126, 234, 0.1);
         }
 
-        .login-container button {
-            width: 100%;
-            padding: 12px;
-            background-color: #667eea;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
 
-        .login-container button:hover {
-            background-color: #5568d3;
-        }
-
-        .login-container button:active {
-            transform: scale(0.98);
-        }
 
         .signup-link a:hover {
             text-decoration: underline;
