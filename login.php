@@ -108,7 +108,7 @@ if (isset($_SESSION['user_id']) && $action === 'login') {
     <link rel="stylesheet" href="styles.css">
     <style>
         body {
-            background: white
+            background: white;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -256,7 +256,7 @@ if (isset($_SESSION['user_id']) && $action === 'login') {
         <?php endif; ?>
 
         <!-- Login Form -->
-        <form method="POST" action="auth.php?action=login">
+        <form method="POST" action="login.php">
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input 

@@ -37,10 +37,10 @@ session_start();
                 <?php
                     if (isset($_SESSION['user_id'])) {
                         echo '<span style="color: white;">' . htmlspecialchars($_SESSION['user_name'] ?? 'User') . '</span>';
-                        echo '<a href="logout.php" style="background-color: #e74c3c; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">Logout</a>';
+                        echo '<a href="logout.php" class="btn-logout">Logout</a>';
                     } else {
-                        echo '<a href="login.php" style="color: white; text-decoration: none;">Login</a>';
-                        echo '<a href="register.php" style="background-color: #27ae60; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">Sign Up</a>';
+                        echo '<a href="login.php" class="btn-login">Login</a>';
+                        echo '<a href="register.php" class="btn-signup">Sign Up</a>';
                     }
                 ?>
             </div>
