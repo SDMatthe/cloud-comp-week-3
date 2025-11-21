@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Registration Successful - MyShop</title>
+	<title>Registration Successful - ShopSphere</title>
 	<style>
 		body {
 			font-family: Arial, sans-serif;
@@ -53,14 +53,14 @@
 </head>
 <body>
 	<div class="header">
-		<h1>MyShop</h1>
+		<h1>ShopSphere</h1>
 		<p>Registration Successful</p>
 	</div>
 
 	<div class="success-message">
 		<div class="success-icon">✓</div>
 		<h2>Registration Successful!</h2>
-		<p>Your account has been created successfully. Welcome to MyShop!</p>
+		<p>Your account has been created successfully. Welcome to ShopSphere!</p>
 
 		<div style="margin-top:30px;">
 			<a href="index.php" class="btn">Go Back to Home</a>

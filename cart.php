@@ -6,122 +6,14 @@ session_start();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopping Cart - MyShop</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-        }
-
-        .navbar {
-            background-color: #2c3e50;
-            padding: 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .navbar-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 70px;
-        }
-
-        .navbar-logo {
-            color: white;
-            text-decoration: none;
-            font-size: 1.8em;
-            font-weight: bold;
-        }
-
-        .nav-menu {
-            display: flex;
-            list-style: none;
-            gap: 0;
-        }
-
-        .nav-item {
-            height: 70px;
-            display: flex;
-            align-items: center;
-        }
-
-        .nav-link {
-            color: white;
-            text-decoration: none;
-            padding: 0 20px;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            transition: background-color 0.3s ease;
-        }
-
-        .nav-link:hover,
-        .nav-link.active {
-            background-color: #3498db;
-            color: white;
-        }
-
-        .nav-auth {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .page-title {
-            color: #2c3e50;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 15px;
-        }
-
-        .empty-cart {
-            text-align: center;
-            padding: 50px;
-            background: white;
-            border-radius: 8px;
-        }
-
-        .empty-cart p {
-            color: #7f8c8d;
-            margin-bottom: 20px;
-        }
-
-        .btn-continue {
-            background-color: #3498db;
-            color: white;
-            padding: 12px 30px;
-            text-decoration: none;
-            border-radius: 4px;
-        }
-
-        .btn-continue:hover {
-            background-color: #2980b9;
-        }
-    </style>
+    <title>Shopping Cart - ShopSphere</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <!-- Navigation Menu -->
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="index.php" class="navbar-logo">🛍️ MyShop</a>
+            <a href="index.php" class="navbar-logo">ShopSphere</a>
 
             <ul class="nav-menu">
                 <li class="nav-item">
@@ -131,13 +23,13 @@ session_start();
                     <a href="products.php" class="nav-link">Shop</a>
                 </li>
                 <li class="nav-item">
-                    <a href="cart.php" class="nav-link active">🛒 Cart</a>
+                    <a href="cart.php" class="nav-link active">Cart</a>
                 </li>
                 <li class="nav-item">
-                    <a href="wishlist.php" class="nav-link">❤️ Wishlist</a>
+                    <a href="wishlist.php" class="nav-link">Wishlist</a>
                 </li>
                 <li class="nav-item">
-                    <a href="orders.php" class="nav-link">📦 Orders</a>
+                    <a href="orders.php" class="nav-link">Orders</a>
                 </li>
             </ul>
 

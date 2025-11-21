@@ -72,7 +72,7 @@ class OrderTrackingController {
     // Get real-time tracking updates
     private function getTrackingUpdates($orderId) {
         // Query Cosmos DB for tracking events
-        // Returns: pending → processing → shipped → delivered
+        // Returns: pending -> processing -> shipped -> delivered
         return [];
     }
 

@@ -3,17 +3,18 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Register - MyShop</title>
+	<title>Register - ShopSphere</title>
+	<link rel="stylesheet" href="styles.css">
 	<style>
 		body {
-			font-family: Arial, sans-serif;
 			background-color: #f4f4f4;
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			height: 100vh;
-			margin: 0;
+			min-height: 100vh;
+			padding: 20px;
 		}
+
 		.header {
 			background-color: #2c3e50;
 			color: white;
@@ -22,7 +23,9 @@
 			position: fixed;
 			top: 0;
 			width: 100%;
+			z-index: 999;
 		}
+
 		.register-form {
 			background: white;
 			padding: 30px;
@@ -30,28 +33,9 @@
 			box-shadow: 0 0 10px rgba(0,0,0,0.1);
 			width: 100%;
 			max-width: 400px;
-			margin-top: 80px;
+			margin-top: 100px;
 		}
-		.form-group { margin-bottom: 15px; }
-		label { display: block; margin-bottom: 5px; font-weight: bold; }
-		input[type="text"], input[type="email"], input[type="password"] {
-			width: 100%;
-			padding: 10px;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-			box-sizing: border-box;
-		}
-		.btn {
-			background-color: #007bff;
-			color: white;
-			padding: 10px 20px;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			width: 100%;
-			font-size: 16px;
-		}
-		.btn:hover { background-color: #0056b3; }
+
 		.error {
 			color: red;
 			padding: 10px;
@@ -61,11 +45,27 @@
 			border-radius: 4px;
 			text-align: center;
 		}
+
+		.register-form input[type="submit"] {
+			background-color: #007bff;
+			color: white;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			width: 100%;
+			font-size: 16px;
+			transition: background-color 0.3s;
+		}
+
+		.register-form input[type="submit"]:hover {
+			background-color: #0056b3;
+		}
 	</style>
 </head>
 <body>
 	<div class="header">
-		<h1>MyShop</h1>
+		<h1>ShopSphere</h1>
 		<p>Create Your Account</p>
 	</div>
 

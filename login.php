@@ -104,17 +104,11 @@ if (isset($_SESSION['user_id']) && $action === 'login') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - MyShop</title>
+    <title>Login - ShopSphere</title>
+    <link rel="stylesheet" href="styles.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: white
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -137,17 +131,6 @@ if (isset($_SESSION['user_id']) && $action === 'login') {
             margin-bottom: 30px;
         }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-        }
-
         input[type="email"],
         input[type="password"] {
             width: 100%;
@@ -165,7 +148,7 @@ if (isset($_SESSION['user_id']) && $action === 'login') {
             box-shadow: 0 0 5px rgba(102, 126, 234, 0.1);
         }
 
-        button {
+        .login-container button {
             width: 100%;
             padding: 12px;
             background-color: #667eea;
@@ -178,24 +161,12 @@ if (isset($_SESSION['user_id']) && $action === 'login') {
             transition: background-color 0.3s;
         }
 
-        button:hover {
+        .login-container button:hover {
             background-color: #5568d3;
         }
 
-        button:active {
+        .login-container button:active {
             transform: scale(0.98);
-        }
-
-        .signup-link {
-            text-align: center;
-            margin-top: 20px;
-            color: #555;
-        }
-
-        .signup-link a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: bold;
         }
 
         .signup-link a:hover {
@@ -268,7 +239,7 @@ if (isset($_SESSION['user_id']) && $action === 'login') {
 </head>
 <body>
     <div class="login-container">
-        <h2>ogin to MyShop</h2>
+        <h2>Login to ShopSphere</h2>
 
         <!-- Error Message -->
         <?php if (!empty($error_message)): ?>
@@ -322,7 +293,7 @@ if (isset($_SESSION['user_id']) && $action === 'login') {
         </div>
 
         <div class="back-link">
-            <a href="index.php">← Back to Home</a>
+            <a href="index.php">Back to Home</a>
         </div>
     </div>
 </body>

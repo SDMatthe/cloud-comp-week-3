@@ -1,31 +1,26 @@
 <?php
-namespace App\Controllers;
-
 class CartController {
     private $db;
-    private $cache;
     private $userId;
 
-    public function __construct(PDO $db, \Redis $cache, $userId) {
-        $this->db = $db;
-        $this->cache = $cache;
-        $this->userId = $userId;
-    }
-
-    // Get cart from Redis
     public function getCart() {
-        $cartKey = "cart_{$this->userId}";
-        $cart = $this->cache->get($cartKey);
-        return $cart ? json_decode($cart, true) : ['items' => [], 'total' => 0];
+        $stmt = $this->db->prepare("
+            SELECT c.id, c.product_id, p.name, p.price, c.quantity
+            FROM cart_items c
+            JOIN products p ON c.product_id = p.id
+            WHERE c.user_id = ?
+        ");
+        $stmt->execute([$this->userId]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $total = array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $items));
+        
+        return ['items' => $items, 'total' => $total];
     }
 
-    // Add to cart
     public function addItem($productId, $quantity) {
-        $cartKey = "cart_{$this->userId}";
-        $cart = $this->getCart();
-
-        // Get product details
-        $stmt = $this->db->prepare("SELECT id, name, price, stock FROM products WHERE id=?");
+        // Validate stock first
+        $stmt = $this->db->prepare("SELECT price, stock FROM products WHERE id = ?");
         $stmt->execute([$productId]);
         $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -33,47 +28,27 @@ class CartController {
             return ['success' => false, 'message' => 'Insufficient stock'];
         }
 
-        // Add or update item
-        $found = false;
-        foreach ($cart['items'] as &$item) {
-            if ($item['product_id'] === $productId) {
-                $item['quantity'] += $quantity;
-                $found = true;
-                break;
-            }
-        }
+        // Add or update cart
+        $stmt = $this->db->prepare("
+            INSERT INTO cart_items (user_id, product_id, quantity) 
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE quantity = quantity + ?
+        ");
+        $stmt->execute([$this->userId, $productId, $quantity, $quantity]);
 
-        if (!$found) {
-            $cart['items'][] = [
-                'product_id' => $productId,
-                'name' => $product['name'],
-                'price' => $product['price'],
-                'quantity' => $quantity
-            ];
-        }
-
-        $this->calculateTotal($cart);
-        $this->cache->setex($cartKey, 86400, json_encode($cart)); // 24 hours
-
-        return ['success' => true, 'cart' => $cart];
+        return ['success' => true, 'message' => 'Added to cart'];
     }
 
-    // Remove from cart
     public function removeItem($productId) {
-        $cartKey = "cart_{$this->userId}";
-        $cart = $this->getCart();
-        
-        $cart['items'] = array_filter($cart['items'], function($item) use ($productId) {
-            return $item['product_id'] !== $productId;
-        });
+        $stmt = $this->db->prepare("
+            DELETE FROM cart_items 
+            WHERE user_id = ? AND product_id = ?
+        ");
+        $stmt->execute([$this->userId, $productId]);
 
-        $this->calculateTotal($cart);
-        $this->cache->setex($cartKey, 86400, json_encode($cart));
-
-        return ['success' => true, 'cart' => $cart];
+        return ['success' => true];
     }
 
-    // Checkout
     public function checkout($paymentMethod, $shippingAddress) {
         $cart = $this->getCart();
 
@@ -86,50 +61,32 @@ class CartController {
 
             // Create order
             $stmt = $this->db->prepare("
-                INSERT INTO orders (user_id, total_amount, payment_method, shipping_address, status, created_at)
-                VALUES (?, ?, ?, ?, 'pending', NOW())
+                INSERT INTO orders (user_id, total_amount, payment_method, shipping_address, status)
+                VALUES (?, ?, ?, ?, 'pending')
             ");
             $stmt->execute([$this->userId, $cart['total'], $paymentMethod, json_encode($shippingAddress)]);
             $orderId = $this->db->lastInsertId();
 
-            // Add order items
+            // Move items from cart to order_items
             foreach ($cart['items'] as $item) {
                 $stmt = $this->db->prepare("
                     INSERT INTO order_items (order_id, product_id, quantity, price)
                     VALUES (?, ?, ?, ?)
                 ");
                 $stmt->execute([$orderId, $item['product_id'], $item['quantity'], $item['price']]);
-
-                // Update stock
-                $stmt = $this->db->prepare("UPDATE products SET stock = stock - ? WHERE id=?");
-                $stmt->execute([$item['quantity'], $item['product_id']]);
             }
 
-            $this->db->commit();
-
             // Clear cart
-            $this->cache->delete("cart_{$this->userId}");
+            $stmt = $this->db->prepare("DELETE FROM cart_items WHERE user_id = ?");
+            $stmt->execute([$this->userId]);
 
-            // Send to Service Bus queue for processing
-            $this->queueOrder($orderId);
+            $this->db->commit();
 
             return ['success' => true, 'order_id' => $orderId];
         } catch (Exception $e) {
             $this->db->rollBack();
-            return ['success' => false, 'message' => $e->getMessage()];
+            return ['success' => false, 'message' => 'Checkout failed: ' . $e->getMessage()];
         }
-    }
-
-    private function calculateTotal(&$cart) {
-        $total = 0;
-        foreach ($cart['items'] as $item) {
-            $total += $item['price'] * $item['quantity'];
-        }
-        $cart['total'] = round($total, 2);
-    }
-
-    private function queueOrder($orderId) {
-        // Queue to Azure Service Bus for async processing
-        // This would be implemented with Azure SDK
     }
 }
+?>
