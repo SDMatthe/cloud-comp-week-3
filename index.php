@@ -50,7 +50,7 @@
                     } else {
                         // User is not logged in
                         ?>
-                        <a href="auth.php?action=login" class="btn-login">Login</a>
+                        <a href="login.php" class="btn-login">Login</a>
                         <a href="register.php" class="btn-signup">Sign Up</a>
                         <?php
                     }
