@@ -56,13 +56,6 @@
                     }
                 ?>
             </div>
-
-			<!-- Hamburger Menu for Mobile -->
-			<div class="hamburger">
-				<span></span>
-				<span></span>
-				<span></span>
-			</div>
 		</div>
 	</nav>
 
