@@ -45,6 +45,7 @@
                                     <span class="user-email-text"><?php echo htmlspecialchars($_SESSION['user_email'] ?? ''); ?></span>
                                 </div>
                             </div>
+                            <a href="logout.php" class="btn-logout">Logout</a>
                         </div>
                         <?php
                     } else {
