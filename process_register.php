@@ -1,13 +1,19 @@
 <?php
 // Simple database connection
-$serverName = "tcp:matth-cloud-comp-assignment.database.windows.net,1433";
-$connectionOptions = array(
-	"Database" => "mydatabase",
-	"Uid" => "myadmin",
-	"PWD" => "C*uldronLake10",
-	"Encrypt" => 1,
-	"TrustServerCertificate" => 0
-);
+// $serverName = "tcp:matth-cloud-comp-assignment.database.windows.net,1433";
+// $connectionOptions = array(
+// 	"Database" => "mydatabase",
+// 	"Uid" => "myadmin",
+// 	"PWD" => "C*uldronLake10",
+// 	"Encrypt" => 1,
+// 	"TrustServerCertificate" => 0
+// );
+
+// mysql db connection
+$host = "localhost";
+$db = "shopsphere";  // Change this to your database name
+$user = "root";      // Default XAMPP MySQL user
+$pass = "";          // Default XAMPP MySQL password (empty)
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

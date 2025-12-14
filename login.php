@@ -15,14 +15,27 @@
 session_start();
 
 // Database configuration
-$serverName = "tcp:matth-cloud-comp-assignment.database.windows.net,1433";
-$connectionOptions = array(
-    "Database" => "mydatabase",
-    "Uid" => "myadmin",
-    "PWD" => "C*uldronLake10",
-    "Encrypt" => 1,
-    "TrustServerCertificate" => 0
-);
+// $serverName = "tcp:matth-cloud-comp-assignment.database.windows.net,1433";
+// $connectionOptions = array(
+//     "Database" => "mydatabase",
+//     "Uid" => "myadmin",
+//     "PWD" => "C*uldronLake10",
+//     "Encrypt" => 1,
+//     "TrustServerCertificate" => 0
+// );
+
+$host = "localhost";
+$db = "shopsphere";  // Change this to your database name
+$user = "root";      // Default XAMPP MySQL user
+$pass = "";          // Default XAMPP MySQL password (empty)
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
+    $pdo->setAttribute(PDO:: ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Database connection failed: " . htmlspecialchars($e->getMessage()));
+}
+
 
 // Determine action
 $action = $_GET['action'] ?? 'login';
