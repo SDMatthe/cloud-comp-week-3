@@ -1,69 +1,72 @@
 <?php
-// Simple database connection
-$serverName = "tcp:matth-cloud-comp-assignment.database.windows.net,1433";
-$connectionOptions = array(
-	"Database" => "mydatabase",
-	"Uid" => "myadmin",
-	"PWD" => "C*uldronLake10",
-	"Encrypt" => 1,
-	"TrustServerCertificate" => 0
-);
+// User Registration Handler - MySQL Version
+require_once 'config.php';
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-	$name = $_POST['name'] ?? '';
-	$email = $_POST['email'] ?? '';
+	$name = trim($_POST['name'] ?? '');
+	$email = trim($_POST['email'] ?? '');
 	$password = $_POST['password'] ?? '';
 
 	// Basic validation
-	if (!empty($name) && !empty($email) && !empty($password)) {
-		// Connect to database
-		$conn = sqlsrv_connect($serverName, $connectionOptions);
+	if (empty($name) || empty($email) || empty($password)) {
+		header("Location: register.php?error=" . urlencode("Please fill all fields"));
+		exit();
+	}
+	
+	// Email validation
+	if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+		header("Location: register.php?error=" . urlencode("Invalid email format"));
+		exit();
+	}
+	
+	// Password validation
+	if (strlen($password) < PASSWORD_MIN_LENGTH) {
+		header("Location: register.php?error=" . urlencode("Password must be at least " . PASSWORD_MIN_LENGTH . " characters"));
+		exit();
+	}
+	
+	// Name validation
+	if (strlen($name) < 2 || strlen($name) > 100) {
+		header("Location: register.php?error=" . urlencode("Name must be between 2 and 100 characters"));
+		exit();
+	}
 
-		if ($conn) {
-			// Hash password
-			$hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-			// Insert into database
-			$sql = "INSERT INTO shopusers (name, email, password) VALUES (?, ?, ?)";
-			$params = array($name, $email, $hashed_password);
-			$stmt = sqlsrv_query($conn, $sql, $params);
-
-			if ($stmt) {
-				// Redirect to success page
-				header("Location: success.php");
-				exit();
-			} else {
-				// Get detailed error information
-				$errors = sqlsrv_errors();
-				$error_message = "Database error: ";
-				if ($errors != null) {
-					foreach ($errors as $error) {
-						$error_message .= "SQLSTATE: " . ($error['SQLSTATE'] ?? '') . ", ";
-						$error_message .= "Code: " . ($error['code'] ?? '') . ", ";
-						$error_message .= "Message: " . ($error['message'] ?? '') . "; ";
-					}
-				}
-				// Redirect back with detailed error
-				header("Location: register.php?error=" . urlencode($error_message));
-				exit();
-			}
-
-			sqlsrv_free_stmt($stmt);
-			sqlsrv_close($conn);
-		} else {
-			$connection_errors = sqlsrv_errors();
-			$conn_error_message = "Database connection failed: ";
-			if ($connection_errors != null) {
-				foreach ($connection_errors as $error) {
-					$conn_error_message .= ($error['message'] ?? '');
-				}
-			}
-			header("Location: register.php?error=" . urlencode($conn_error_message));
+	try {
+		// Connect to database using PDO
+		$pdo = getDBConnection();
+		
+		if (!$pdo) {
+			header("Location: register.php?error=" . urlencode("Database connection failed"));
 			exit();
 		}
-	} else {
-		header("Location: register.php?error=" . urlencode("Please fill all fields"));
+
+		// Check if user exists
+		$checkStmt = $pdo->prepare("SELECT id FROM shopusers WHERE email = ?");
+		$checkStmt->execute([$email]);
+		
+		if ($checkStmt->fetch()) {
+			// User already exists
+			header("Location: register.php?error=" . urlencode("Email already registered"));
+			exit();
+		}
+
+		// Hash password
+		$hashed_password = password_hash($password, PASSWORD_HASH_ALGO, ['cost' => PASSWORD_HASH_COST]);
+
+		// Insert new user into database
+		$sql = "INSERT INTO shopusers (name, email, password, created_at) VALUES (?, ?, ?, NOW())";
+		$stmt = $pdo->prepare($sql);
+		$stmt->execute([$name, $email, $hashed_password]);
+
+		// Redirect to success page
+		header("Location: success.php");
+		exit();
+
+	} catch (PDOException $e) {
+		// Database error - log it but don't expose details
+		error_log('Registration error: ' . $e->getMessage());
+		header("Location: register.php?error=" . urlencode("Registration failed. Please try again."));
 		exit();
 	}
 } else {
@@ -71,5 +74,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	header("Location: register.php");
 	exit();
 }
-
 ?>

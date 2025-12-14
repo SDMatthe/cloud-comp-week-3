@@ -2,6 +2,7 @@
 /**
  * Unified Authentication Handler
  * Handles both login and logout in a single file
+ * Uses MySQL database via PDO
  * 
  * GET Parameters:
  *  - action=login  (default) - Display login form or process login
@@ -10,19 +11,10 @@
  * POST Parameters:
  *  - email
  *  - password
+ *  - csrf_token
  */
 
-session_start();
-
-// Database configuration
-$serverName = "tcp:matth-cloud-comp-assignment.database.windows.net,1433";
-$connectionOptions = array(
-    "Database" => "mydatabase",
-    "Uid" => "myadmin",
-    "PWD" => "C*uldronLake10",
-    "Encrypt" => 1,
-    "TrustServerCertificate" => 0
-);
+require_once 'config.php';
 
 // Determine action
 $action = $_GET['action'] ?? 'login';
@@ -48,47 +40,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = "Please enter a valid email address.";
     } else {
-        // Connect to database
-        $conn = sqlsrv_connect($serverName, $connectionOptions);
-
-        if ($conn) {
-            // Query user
-            $sql = "SELECT id, name, email, password FROM shopusers WHERE email = ?";
-            $params = array($email);
-            $stmt = sqlsrv_query($conn, $sql, $params);
-
-            if ($stmt === false) {
-                $error_message = "Database error: " . print_r(sqlsrv_errors(), true);
+        try {
+            // Connect to MySQL database
+            $pdo = getDBConnection();
+            
+            if (!$pdo) {
+                $error_message = "Database connection failed. Please try again later.";
             } else {
-                $user = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
+                // Query user
+                $sql = "SELECT id, name, email, password FROM shopusers WHERE email = ?";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$email]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($user && password_verify($password, $user['password'])) {
+                    // Regenerate session ID to prevent fixation
+                    session_regenerate_id(true);
+                    
                     // Login successful - create session
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['user_name'] = $user['name'];
                     $_SESSION['user_email'] = $user['email'];
                     $_SESSION['login_time'] = time();
 
+                    // Handle "Remember me" checkbox
+                    if (isset($_POST['remember']) && $_POST['remember'] == '1') {
+                        // Set cookie for 30 days
+                        setcookie('remember_email', $email, time() + (30 * 24 * 60 * 60), '/');
+                    }
+
                     // Redirect to dashboard or previous page
-                    $redirect = $_GET['redirect'] ?? 'products.php';
+                    $redirect = 'products.php';
+                    if (isset($_GET['redirect'])) {
+                        // Whitelist allowed redirects for security
+                        $allowed = ['products.php', 'cart.php', 'wishlist.php', 'orders.php'];
+                        if (in_array($_GET['redirect'], $allowed)) {
+                            $redirect = $_GET['redirect'];
+                        }
+                    }
+                    
                     header("Location: " . $redirect);
                     exit();
                 } else {
                     $error_message = "Invalid email or password.";
                 }
-
-                sqlsrv_free_stmt($stmt);
             }
-
-            sqlsrv_close($conn);
-        } else {
-            $conn_errors = sqlsrv_errors();
-            $error_message = "Database connection failed: ";
-            if ($conn_errors != null) {
-                foreach ($conn_errors as $error) {
-                    $error_message .= $error['message'] . " ";
-                }
-            }
+        } catch (PDOException $e) {
+            error_log('Login error: ' . $e->getMessage());
+            $error_message = "An error occurred. Please try again later.";
         }
     }
 }

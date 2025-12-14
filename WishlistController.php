@@ -1,6 +1,8 @@
 <?php
 namespace App\Controllers;
 
+use PDO;
+
 class WishlistController {
     private $db;
     private $cache;
@@ -14,61 +16,114 @@ class WishlistController {
 
     // Get wishlist
     public function getWishlist() {
-        $stmt = $this->db->prepare("
-            SELECT p.*, w.added_at FROM wishlist w
-            JOIN products p ON w.product_id = p.id
-            WHERE w.user_id=?
-            ORDER BY w.added_at DESC
-        ");
-        $stmt->execute([$this->userId]);
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $cacheKey = "wishlist_{$this->userId}";
+            
+            // Check cache first
+            $cached = $this->cache->get($cacheKey);
+            if ($cached) {
+                return json_decode($cached, true);
+            }
+
+            $stmt = $this->db->prepare("
+                SELECT p.*, w.added_at FROM wishlist w
+                JOIN products p ON w.product_id = p.id
+                WHERE w.user_id = ?
+                ORDER BY w.added_at DESC
+            ");
+            $stmt->execute([$this->userId]);
+            $wishlist = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Cache wishlist
+            $this->cache->setex($cacheKey, CACHE_TIMEOUT, json_encode($wishlist));
+            
+            return $wishlist;
+        } catch (Exception $e) {
+            error_log('Wishlist fetch error: ' . $e->getMessage());
+            return [];
+        }
     }
 
     // Add to wishlist
     public function addToWishlist($productId) {
-        // Check if already in wishlist
-        $stmt = $this->db->prepare("SELECT id FROM wishlist WHERE user_id=? AND product_id=?");
-        $stmt->execute([$this->userId, $productId]);
-        
-        if ($stmt->fetch()) {
-            return ['success' => false, 'message' => 'Already in wishlist'];
+        if (!is_numeric($productId)) {
+            return ['success' => false, 'message' => 'Invalid product'];
         }
 
-        $stmt = $this->db->prepare("
-            INSERT INTO wishlist (user_id, product_id, added_at) VALUES (?, ?, NOW())
-        ");
-        $result = $stmt->execute([$this->userId, $productId]);
+        try {
+            // Check if already in wishlist
+            $stmt = $this->db->prepare("SELECT id FROM wishlist WHERE user_id = ? AND product_id = ?");
+            $stmt->execute([$this->userId, $productId]);
+            
+            if ($stmt->fetch()) {
+                return ['success' => false, 'message' => 'Already in wishlist'];
+            }
 
-        // Clear cache
-        $this->cache->delete("wishlist_{$this->userId}");
+            // Verify product exists
+            $stmt = $this->db->prepare("SELECT id FROM products WHERE id = ?");
+            $stmt->execute([$productId]);
+            if (!$stmt->fetch()) {
+                return ['success' => false, 'message' => 'Product not found'];
+            }
 
-        return ['success' => $result];
+            $stmt = $this->db->prepare("
+                INSERT INTO wishlist (user_id, product_id, added_at) VALUES (?, ?, NOW())
+            ");
+            $result = $stmt->execute([$this->userId, $productId]);
+
+            // Clear cache
+            $this->cache->delete("wishlist_{$this->userId}");
+
+            return ['success' => $result];
+        } catch (Exception $e) {
+            error_log('Add to wishlist error: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Failed to add to wishlist'];
+        }
     }
 
     // Remove from wishlist
     public function removeFromWishlist($productId) {
-        $stmt = $this->db->prepare("DELETE FROM wishlist WHERE user_id=? AND product_id=?");
-        $result = $stmt->execute([$this->userId, $productId]);
+        if (!is_numeric($productId)) {
+            return ['success' => false, 'message' => 'Invalid product'];
+        }
 
-        $this->cache->delete("wishlist_{$this->userId}");
+        try {
+            $stmt = $this->db->prepare("DELETE FROM wishlist WHERE user_id = ? AND product_id = ?");
+            $result = $stmt->execute([$this->userId, $productId]);
 
-        return ['success' => $result];
+            // Clear cache
+            $this->cache->delete("wishlist_{$this->userId}");
+
+            return ['success' => $result];
+        } catch (Exception $e) {
+            error_log('Remove from wishlist error: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Failed to remove from wishlist'];
+        }
     }
 
     // Check if product in wishlist
     public function isInWishlist($productId) {
-        $stmt = $this->db->prepare("SELECT id FROM wishlist WHERE user_id=? AND product_id=?");
-        $stmt->execute([$this->userId, $productId]);
-        
-        return !!$stmt->fetch();
+        try {
+            $stmt = $this->db->prepare("SELECT id FROM wishlist WHERE user_id = ? AND product_id = ?");
+            $stmt->execute([$this->userId, $productId]);
+            
+            return !!$stmt->fetch();
+        } catch (Exception $e) {
+            error_log('Wishlist check error: ' . $e->getMessage());
+            return false;
+        }
     }
 
     // Get wishlist count
     public function getWishlistCount() {
-        $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM wishlist WHERE user_id=?");
-        $stmt->execute([$this->userId]);
-        
-        return $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM wishlist WHERE user_id = ?");
+            $stmt->execute([$this->userId]);
+            
+            return $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+        } catch (Exception $e) {
+            error_log('Wishlist count error: ' . $e->getMessage());
+            return 0;
+        }
     }
 }

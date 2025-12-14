@@ -3,6 +3,11 @@ class CartController {
     private $db;
     private $userId;
 
+    public function __construct(PDO $db, $userId) {
+        $this->db = $db;
+        $this->userId = $userId;
+    }
+
     public function getCart() {
         $stmt = $this->db->prepare("
             SELECT c.id, c.product_id, p.name, p.price, c.quantity
@@ -19,6 +24,11 @@ class CartController {
     }
 
     public function addItem($productId, $quantity) {
+        // Validate inputs
+        if (!is_numeric($productId) || !is_numeric($quantity) || $quantity <= 0) {
+            return ['success' => false, 'message' => 'Invalid product or quantity'];
+        }
+
         // Validate stock first
         $stmt = $this->db->prepare("SELECT price, stock FROM products WHERE id = ?");
         $stmt->execute([$productId]);
@@ -40,6 +50,10 @@ class CartController {
     }
 
     public function removeItem($productId) {
+        if (!is_numeric($productId)) {
+            return ['success' => false, 'message' => 'Invalid product'];
+        }
+
         $stmt = $this->db->prepare("
             DELETE FROM cart_items 
             WHERE user_id = ? AND product_id = ?
@@ -50,6 +64,10 @@ class CartController {
     }
 
     public function checkout($paymentMethod, $shippingAddress) {
+        if (empty($paymentMethod) || empty($shippingAddress)) {
+            return ['success' => false, 'message' => 'Missing payment or shipping info'];
+        }
+
         $cart = $this->getCart();
 
         if (empty($cart['items'])) {
@@ -61,8 +79,8 @@ class CartController {
 
             // Create order
             $stmt = $this->db->prepare("
-                INSERT INTO orders (user_id, total_amount, payment_method, shipping_address, status)
-                VALUES (?, ?, ?, ?, 'pending')
+                INSERT INTO orders (user_id, total_amount, payment_method, shipping_address, status, created_at)
+                VALUES (?, ?, ?, ?, 'pending', NOW())
             ");
             $stmt->execute([$this->userId, $cart['total'], $paymentMethod, json_encode($shippingAddress)]);
             $orderId = $this->db->lastInsertId();
@@ -85,7 +103,8 @@ class CartController {
             return ['success' => true, 'order_id' => $orderId];
         } catch (Exception $e) {
             $this->db->rollBack();
-            return ['success' => false, 'message' => 'Checkout failed: ' . $e->getMessage()];
+            error_log('Checkout error: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Checkout failed'];
         }
     }
 }
