@@ -1,81 +1,63 @@
 <?php
-// Simple database connection
-// $serverName = "tcp:matth-cloud-comp-assignment.database.windows.net,1433";
-// $connectionOptions = array(
-// 	"Database" => "mydatabase",
-// 	"Uid" => "myadmin",
-// 	"PWD" => "C*uldronLake10",
-// 	"Encrypt" => 1,
-// 	"TrustServerCertificate" => 0
-// );
+/**
+ * User Registration Handler
+ * Updated for local XAMPP MySQL Database
+ */
 
-// mysql db connection
+// Database configuration for XAMPP MySQL
 $host = "localhost";
-$db = "shopsphere";  // Change this to your database name
+$db = "cloudcomp-db";  // Change this to your database name
 $user = "root";      // Default XAMPP MySQL user
 $pass = "";          // Default XAMPP MySQL password (empty)
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-	$name = $_POST['name'] ?? '';
-	$email = $_POST['email'] ?? '';
-	$password = $_POST['password'] ?? '';
+    $name = $_POST['name'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-	// Basic validation
-	if (!empty($name) && !empty($email) && !empty($password)) {
-		// Connect to database
-		$conn = sqlsrv_connect($serverName, $connectionOptions);
+    // Basic validation
+    if (! empty($name) && !empty($email) && !empty($password)) {
+        try {
+            // Connect to database using PDO
+            $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-		if ($conn) {
-			// Hash password
-			$hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            // Check if user exists
+            $checkStmt = $pdo->prepare("SELECT id FROM shopusers WHERE email = ?");
+            $checkStmt->execute([$email]);
+            
+            if ($checkStmt->fetch()) {
+                // User already exists
+                header("Location:  register.php?error=" . urlencode("Email already registered"));
+                exit();
+            }
 
-			// Insert into database
-			$sql = "INSERT INTO shopusers (name, email, password) VALUES (?, ?, ?)";
-			$params = array($name, $email, $hashed_password);
-			$stmt = sqlsrv_query($conn, $sql, $params);
+            // Hash password
+            $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
-			if ($stmt) {
-				// Redirect to success page
-				header("Location: success.php");
-				exit();
-			} else {
-				// Get detailed error information
-				$errors = sqlsrv_errors();
-				$error_message = "Database error: ";
-				if ($errors != null) {
-					foreach ($errors as $error) {
-						$error_message .= "SQLSTATE: " . ($error['SQLSTATE'] ?? '') . ", ";
-						$error_message .= "Code: " . ($error['code'] ?? '') . ", ";
-						$error_message .= "Message: " . ($error['message'] ?? '') . "; ";
-					}
-				}
-				// Redirect back with detailed error
-				header("Location: register.php?error=" . urlencode($error_message));
-				exit();
-			}
+            // Insert new user into database
+            $sql = "INSERT INTO shopusers (name, email, password, created_at) VALUES (?, ?, ?, NOW())";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$name, $email, $hashed_password]);
 
-			sqlsrv_free_stmt($stmt);
-			sqlsrv_close($conn);
-		} else {
-			$connection_errors = sqlsrv_errors();
-			$conn_error_message = "Database connection failed: ";
-			if ($connection_errors != null) {
-				foreach ($connection_errors as $error) {
-					$conn_error_message .= ($error['message'] ?? '');
-				}
-			}
-			header("Location: register.php?error=" . urlencode($conn_error_message));
-			exit();
-		}
-	} else {
-		header("Location: register.php?error=" . urlencode("Please fill all fields"));
-		exit();
-	}
+            // Redirect to success page
+            header("Location: success.php");
+            exit();
+
+        } catch (PDOException $e) {
+            // Database error
+            $error_message = "Registration failed: " . htmlspecialchars($e->getMessage());
+            header("Location: register.php?error=" . urlencode($error_message));
+            exit();
+        }
+    } else {
+        header("Location: register.php? error=" . urlencode("Please fill all fields"));
+        exit();
+    }
 } else {
-	// If someone tries to access this page directly
-	header("Location: register.php");
-	exit();
+    // If someone tries to access this page directly
+    header("Location:  register.php");
+    exit();
 }
-
 ?>
