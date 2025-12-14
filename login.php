@@ -15,15 +15,6 @@
 session_start();
 
 // Database configuration
-// $serverName = "tcp:matth-cloud-comp-assignment.database.windows.net,1433";
-// $connectionOptions = array(
-//     "Database" => "mydatabase",
-//     "Uid" => "myadmin",
-//     "PWD" => "C*uldronLake10",
-//     "Encrypt" => 1,
-//     "TrustServerCertificate" => 0
-// );
-
 $host = "localhost";
 $db = "shopsphere";  // Change this to your database name
 $user = "root";      // Default XAMPP MySQL user
@@ -31,7 +22,7 @@ $pass = "";          // Default XAMPP MySQL password (empty)
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
-    $pdo->setAttribute(PDO:: ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     die("Database connection failed: " . htmlspecialchars($e->getMessage()));
 }
@@ -61,47 +52,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = "Please enter a valid email address.";
     } else {
-        // Connect to database
-        $conn = sqlsrv_connect($serverName, $connectionOptions);
+        // Query user
+        $sql = "SELECT id, name, email, password FROM shopusers WHERE email = ?";
+        $stmt = $pdo->prepare($sql);
+        
+        try {
+            $stmt->execute([$email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($conn) {
-            // Query user
-            $sql = "SELECT id, name, email, password FROM shopusers WHERE email = ?";
-            $params = array($email);
-            $stmt = sqlsrv_query($conn, $sql, $params);
+            if ($user && password_verify($password, $user['password'])) {
+                // Login successful - create session
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_name'] = $user['name'];
+                $_SESSION['user_email'] = $user['email'];
+                $_SESSION['login_time'] = time();
 
-            if ($stmt === false) {
-                $error_message = "Database error: " . print_r(sqlsrv_errors(), true);
+                // Redirect to dashboard or previous page
+                $redirect = $_GET['redirect'] ?? 'products.php';
+                header("Location: " . $redirect);
+                exit();
             } else {
-                $user = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
-
-                if ($user && password_verify($password, $user['password'])) {
-                    // Login successful - create session
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['user_name'] = $user['name'];
-                    $_SESSION['user_email'] = $user['email'];
-                    $_SESSION['login_time'] = time();
-
-                    // Redirect to dashboard or previous page
-                    $redirect = $_GET['redirect'] ?? 'products.php';
-                    header("Location: " . $redirect);
-                    exit();
-                } else {
-                    $error_message = "Invalid email or password.";
-                }
-
-                sqlsrv_free_stmt($stmt);
+                $error_message = "Invalid email or password.";
             }
-
-            sqlsrv_close($conn);
-        } else {
-            $conn_errors = sqlsrv_errors();
-            $error_message = "Database connection failed: ";
-            if ($conn_errors != null) {
-                foreach ($conn_errors as $error) {
-                    $error_message .= $error['message'] . " ";
-                }
-            }
+        } catch (PDOException $e) {
+            $error_message = "Database error: " . htmlspecialchars($e->getMessage());
         }
     }
 }
