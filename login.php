@@ -14,25 +14,7 @@
  *  - csrf_token
  */
 
-<<<<<<< HEAD
 require_once 'config.php';
-=======
-session_start();
-
-// Database configuration
-$host = "localhost";
-$db = "shopsphere";  // Change this to your database name
-$user = "root";      // Default XAMPP MySQL user
-$pass = "";          // Default XAMPP MySQL password (empty)
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Database connection failed: " . htmlspecialchars($e->getMessage()));
-}
-
->>>>>>> 78f724664e60dff9e23efa2fd7f713212c4f3694
 
 // Determine action
 $action = $_GET['action'] ?? 'login';
@@ -58,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = "Please enter a valid email address.";
     } else {
-<<<<<<< HEAD
         try {
             // Connect to MySQL database
             $pdo = getDBConnection();
@@ -107,32 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             error_log('Login error: ' . $e->getMessage());
             $error_message = "An error occurred. Please try again later.";
-=======
-        // Query user
-        $sql = "SELECT id, name, email, password FROM shopusers WHERE email = ?";
-        $stmt = $pdo->prepare($sql);
-        
-        try {
-            $stmt->execute([$email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($user && password_verify($password, $user['password'])) {
-                // Login successful - create session
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_name'] = $user['name'];
-                $_SESSION['user_email'] = $user['email'];
-                $_SESSION['login_time'] = time();
-
-                // Redirect to dashboard or previous page
-                $redirect = $_GET['redirect'] ?? 'products.php';
-                header("Location: " . $redirect);
-                exit();
-            } else {
-                $error_message = "Invalid email or password.";
-            }
-        } catch (PDOException $e) {
-            $error_message = "Database error: " . htmlspecialchars($e->getMessage());
->>>>>>> 78f724664e60dff9e23efa2fd7f713212c4f3694
         }
     }
 }
