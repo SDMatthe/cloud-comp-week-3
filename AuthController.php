@@ -8,7 +8,7 @@ class AuthController {
     private $db;
     private $cache;
 
-    public function __construct(PDO $db, \Redis $cache) {
+    public function __construct(PDO $db, $cache = null) {
         $this->db = $db;
         $this->cache = $cache;
     }
@@ -79,14 +79,20 @@ class AuthController {
             $_SESSION['user_email'] = $user['email'];
             $_SESSION['login_time'] = time();
 
-            // Cache session in Redis
+            // Cache session in Redis if available
             $token = bin2hex(random_bytes(32));
-            $this->cache->setex("session_{$token}", CACHE_TIMEOUT, json_encode([
-                'user_id' => $user['id'],
-                'email' => $user['email'],
-                'name' => $user['name'],
-                'login_time' => time()
-            ]));
+            if ($this->cache) {
+                try {
+                    $this->cache->setex("session_{$token}", CACHE_TIMEOUT, json_encode([
+                        'user_id' => $user['id'],
+                        'email' => $user['email'],
+                        'name' => $user['name'],
+                        'login_time' => time()
+                    ]));
+                } catch (Exception $e) {
+                    // Cache write failed, continue
+                }
+            }
 
             return ['success' => true, 'token' => $token, 'user' => $user];
         } catch (Exception $e) {
@@ -101,9 +107,13 @@ class AuthController {
             session_start();
         }
         
-        // Clear Redis cache if token provided
+        // Clear Redis cache if token provided and cache available
         if ($token && $this->cache) {
-            $this->cache->delete("session_{$token}");
+            try {
+                $this->cache->delete("session_{$token}");
+            } catch (Exception $e) {
+                // Cache delete failed, continue
+            }
         }
         
         session_destroy();

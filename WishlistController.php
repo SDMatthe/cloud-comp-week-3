@@ -8,7 +8,7 @@ class WishlistController {
     private $cache;
     private $userId;
 
-    public function __construct(PDO $db, \Redis $cache, $userId) {
+    public function __construct(PDO $db, $cache, $userId) {
         $this->db = $db;
         $this->cache = $cache;
         $this->userId = $userId;
@@ -19,10 +19,16 @@ class WishlistController {
         try {
             $cacheKey = "wishlist_{$this->userId}";
             
-            // Check cache first
-            $cached = $this->cache->get($cacheKey);
-            if ($cached) {
-                return json_decode($cached, true);
+            // Check cache first if available
+            if ($this->cache) {
+                try {
+                    $cached = $this->cache->get($cacheKey);
+                    if ($cached) {
+                        return json_decode($cached, true);
+                    }
+                } catch (\Exception $e) {
+                    // Cache read failed, continue
+                }
             }
 
             $stmt = $this->db->prepare("
@@ -34,11 +40,17 @@ class WishlistController {
             $stmt->execute([$this->userId]);
             $wishlist = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Cache wishlist
-            $this->cache->setex($cacheKey, CACHE_TIMEOUT, json_encode($wishlist));
+            // Cache wishlist if cache available
+            if ($this->cache) {
+                try {
+                    $this->cache->setex($cacheKey, CACHE_TIMEOUT, json_encode($wishlist));
+                } catch (\Exception $e) {
+                    // Cache write failed, continue
+                }
+            }
             
             return $wishlist;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             error_log('Wishlist fetch error: ' . $e->getMessage());
             return [];
         }
@@ -71,11 +83,17 @@ class WishlistController {
             ");
             $result = $stmt->execute([$this->userId, $productId]);
 
-            // Clear cache
-            $this->cache->delete("wishlist_{$this->userId}");
+            // Clear cache if available
+            if ($this->cache) {
+                try {
+                    $this->cache->delete("wishlist_{$this->userId}");
+                } catch (\Exception $e) {
+                    // Cache delete failed, continue
+                }
+            }
 
             return ['success' => $result];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             error_log('Add to wishlist error: ' . $e->getMessage());
             return ['success' => false, 'message' => 'Failed to add to wishlist'];
         }
@@ -91,11 +109,17 @@ class WishlistController {
             $stmt = $this->db->prepare("DELETE FROM wishlist WHERE user_id = ? AND product_id = ?");
             $result = $stmt->execute([$this->userId, $productId]);
 
-            // Clear cache
-            $this->cache->delete("wishlist_{$this->userId}");
+            // Clear cache if available
+            if ($this->cache) {
+                try {
+                    $this->cache->delete("wishlist_{$this->userId}");
+                } catch (\Exception $e) {
+                    // Cache delete failed, continue
+                }
+            }
 
             return ['success' => $result];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             error_log('Remove from wishlist error: ' . $e->getMessage());
             return ['success' => false, 'message' => 'Failed to remove from wishlist'];
         }
@@ -108,7 +132,7 @@ class WishlistController {
             $stmt->execute([$this->userId, $productId]);
             
             return !!$stmt->fetch();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             error_log('Wishlist check error: ' . $e->getMessage());
             return false;
         }
@@ -121,7 +145,7 @@ class WishlistController {
             $stmt->execute([$this->userId]);
             
             return $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             error_log('Wishlist count error: ' . $e->getMessage());
             return 0;
         }

@@ -7,7 +7,7 @@ class PaymentController {
     private $db;
     private $cache;
 
-    public function __construct(PDO $db, \Redis $cache) {
+    public function __construct(PDO $db, $cache = null) {
         $this->db = $db;
         $this->cache = $cache;
     }
@@ -62,11 +62,17 @@ class PaymentController {
 
             $this->db->commit();
 
-            // Cache successful payment
-            $this->cache->setex("payment_{$paymentId}", CACHE_TIMEOUT, json_encode([
-                'transaction_id' => $transactionId,
-                'status' => 'completed'
-            ]));
+            // Cache successful payment if cache available
+            if ($this->cache) {
+                try {
+                    $this->cache->setex("payment_{$paymentId}", CACHE_TIMEOUT, json_encode([
+                        'transaction_id' => $transactionId,
+                        'status' => 'completed'
+                    ]));
+                } catch (\Exception $e) {
+                    // Cache write failed, continue
+                }
+            }
 
             return ['success' => true, 'transaction_id' => $transactionId, 'payment_id' => $paymentId];
 

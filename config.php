@@ -40,10 +40,13 @@ function getDBConnection() {
  */
 function getRedisConnection() {
     try {
-        $redis = new Redis();
-        $redis->connect(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
-        $redis->select(REDIS_DB);
-        return $redis;
+        if (class_exists('Redis')) {
+            $redis = new Redis();
+            $redis->connect(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
+            $redis->select(REDIS_DB);
+            return $redis;
+        }
+        return null;
     } catch (Exception $e) {
         error_log('Redis connection failed: ' . $e->getMessage());
         return null;

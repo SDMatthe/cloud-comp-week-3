@@ -8,7 +8,7 @@ class ProductController {
     private $db;
     private $cache;
 
-    public function __construct(PDO $db, \Redis $cache) {
+    public function __construct(PDO $db, $cache = null) {
         $this->db = $db;
         $this->cache = $cache;
     }
@@ -18,10 +18,16 @@ class ProductController {
         $cacheKey = "products_page_{$page}_{$limit}";
         
         try {
-            // Check cache first
-            $cached = $this->cache->get($cacheKey);
-            if ($cached) {
-                return json_decode($cached, true);
+            // Check cache first if available
+            if ($this->cache) {
+                try {
+                    $cached = $this->cache->get($cacheKey);
+                    if ($cached) {
+                        return json_decode($cached, true);
+                    }
+                } catch (Exception $e) {
+                    // Cache read failed, continue without cache
+                }
             }
 
             $offset = ($page - 1) * $limit;
@@ -36,8 +42,14 @@ class ProductController {
             
             $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Cache for 1 hour
-            $this->cache->setex($cacheKey, CACHE_TIMEOUT, json_encode($products));
+            // Cache for 1 hour if cache available
+            if ($this->cache) {
+                try {
+                    $this->cache->setex($cacheKey, CACHE_TIMEOUT, json_encode($products));
+                } catch (Exception $e) {
+                    // Cache write failed, continue without cache
+                }
+            }
             
             return $products;
         } catch (Exception $e) {
@@ -54,17 +66,29 @@ class ProductController {
 
         try {
             $cacheKey = "product_{$id}";
-            $cached = $this->cache->get($cacheKey);
-            if ($cached) {
-                return json_decode($cached, true);
+            
+            // Check cache if available
+            if ($this->cache) {
+                try {
+                    $cached = $this->cache->get($cacheKey);
+                    if ($cached) {
+                        return json_decode($cached, true);
+                    }
+                } catch (Exception $e) {
+                    // Cache read failed, continue without cache
+                }
             }
 
             $stmt = $this->db->prepare("SELECT * FROM products WHERE id = ?");
             $stmt->execute([$id]);
             $product = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($product) {
-                $this->cache->setex($cacheKey, CACHE_TIMEOUT, json_encode($product));
+            if ($product && $this->cache) {
+                try {
+                    $this->cache->setex($cacheKey, CACHE_TIMEOUT, json_encode($product));
+                } catch (Exception $e) {
+                    // Cache write failed, continue
+                }
             }
             
             return $product;
@@ -95,8 +119,14 @@ class ProductController {
                 $data['category'] ?? ''
             ]);
             
-            // Clear cache
-            $this->cache->flushdb();
+            // Clear cache if available
+            if ($this->cache) {
+                try {
+                    $this->cache->flushdb();
+                } catch (Exception $e) {
+                    // Cache clear failed, continue
+                }
+            }
             
             return ['success' => $result, 'product_id' => $this->db->lastInsertId()];
         } catch (Exception $e) {
@@ -117,8 +147,14 @@ class ProductController {
             ");
             $result = $stmt->execute([$quantity, $productId]);
             
-            // Clear product cache
-            $this->cache->delete("product_{$productId}");
+            // Clear product cache if available
+            if ($this->cache) {
+                try {
+                    $this->cache->delete("product_{$productId}");
+                } catch (Exception $e) {
+                    // Cache delete failed, continue
+                }
+            }
             
             return $result;
         } catch (Exception $e) {

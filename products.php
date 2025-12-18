@@ -1,5 +1,37 @@
 <?php
-session_start();
+require_once 'config.php';
+
+// Load ProductController
+require_once 'productcontroller.php';
+
+// Session already started in config.php
+
+$products = [];
+$error = '';
+
+try {
+    $pdo = getDBConnection();
+    if ($pdo) {
+        // For Redis, we'll just create a mock cache if Redis is not available
+        $redis = null;
+        try {
+            if (class_exists('Redis')) {
+                $redis = new Redis();
+                $redis->connect(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
+                $redis->select(REDIS_DB);
+            }
+        } catch (Exception $e) {
+            // Redis not available, will work without cache
+        }
+
+        // Create controller
+        $productController = new \App\Controllers\ProductController($pdo, $redis);
+        $products = $productController->getProducts(1, 20);
+    }
+} catch (Exception $e) {
+    $error = 'Failed to load products: ' . $e->getMessage();
+    error_log('Products page error: ' . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -50,44 +82,108 @@ session_start();
     <div class="container">
         <h1 class="page-title">Shop Our Products</h1>
 
-        <div class="products-grid">
-            <!-- Sample Products - Replace with database query -->
-            <?php
-                // For now, displaying sample products
-                // In production, you would query the database using ProductController
-                
-                $sampleProducts = [
-                    ['id' => 1, 'name' => 'Laptop', 'price' => 999.99, 'stock' => 5, 'emoji' => '💻'],
-                    ['id' => 2, 'name' => 'Smartphone', 'price' => 599.99, 'stock' => 10, 'emoji' => '📱'],
-                    ['id' => 3, 'name' => 'Headphones', 'price' => 149.99, 'stock' => 20, 'emoji' => '🎧'],
-                    ['id' => 4, 'name' => 'Tablet', 'price' => 399.99, 'stock' => 8, 'emoji' => '📱'],
-                    ['id' => 5, 'name' => 'Smart Watch', 'price' => 299.99, 'stock' => 15, 'emoji' => '⌚'],
-                    ['id' => 6, 'name' => 'Camera', 'price' => 799.99, 'stock' => 3, 'emoji' => '📷'],
-                ];
+        <?php if ($error): ?>
+            <div class="error-message" style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 4px; margin-bottom: 20px;">
+                <?php echo htmlspecialchars($error); ?>
+            </div>
+        <?php endif; ?>
 
-                if (count($sampleProducts) > 0) {
-                    foreach ($sampleProducts as $product) {
+        <div class="products-grid">
+            <?php
+                if (count($products) > 0) {
+                    foreach ($products as $product) {
+                        $inWishlist = false;
+                        if (isset($_SESSION['user_id'])) {
+                            try {
+                                $pdo = getDBConnection();
+                                $stmt = $pdo->prepare("SELECT id FROM wishlist WHERE user_id = ? AND product_id = ?");
+                                $stmt->execute([$_SESSION['user_id'], $product['id']]);
+                                $inWishlist = $stmt->fetch() !== false;
+                            } catch (Exception $e) {
+                                // Continue without wishlist check
+                            }
+                        }
+                        
                         echo '<div class="product-card">';
-                        echo '  <div class="product-image">' . $product['emoji'] . '</div>';
+                        echo '  <div class="product-image">' . ($product['image_url'] ? htmlspecialchars($product['image_url']) : '📦') . '</div>';
                         echo '  <div class="product-info">';
                         echo '    <div class="product-name">' . htmlspecialchars($product['name']) . '</div>';
+                        echo '    <div class="product-description" style="font-size: 12px; color: #666; margin: 5px 0;">' . htmlspecialchars(substr($product['description'], 0, 50)) . '...</div>';
                         echo '    <div class="product-price">$' . number_format($product['price'], 2) . '</div>';
-                        echo '    <div class="product-stock">Stock: ' . $product['stock'] . ' available</div>';
-                        echo '    <button class="btn-add-cart" onclick="addToCart(' . $product['id'] . ')">Add to Cart</button>';
+                        echo '    <div class="product-stock" style="font-size: 12px; color: ' . ($product['stock'] > 0 ? '#28a745' : '#dc3545') . ';">' . ($product['stock'] > 0 ? 'Stock: ' . $product['stock'] . ' available' : 'Out of Stock') . '</div>';
+                        
+                        if (isset($_SESSION['user_id'])) {
+                            echo '    <div style="display: flex; gap: 5px; margin-top: 10px;">';
+                            if ($product['stock'] > 0) {
+                                echo '      <button class="btn-add-cart" onclick="addToCart(' . $product['id'] . ', \'' . htmlspecialchars($product['name']) . '\')" style="flex: 1;">Add to Cart</button>';
+                            }
+                            echo '      <button class="btn-wishlist" onclick="toggleWishlist(' . $product['id'] . ')" style="flex: 0 0 auto; background-color: ' . ($inWishlist ? '#ff6b6b' : '#f0f0f0') . '; color: ' . ($inWishlist ? 'white' : '#333') . ';">♥</button>';
+                            echo '    </div>';
+                        } else {
+                            echo '    <button class="btn-add-cart" onclick="requireLogin()" style="width: 100%; margin-top: 10px;">Add to Cart</button>';
+                        }
+                        
                         echo '  </div>';
                         echo '</div>';
                     }
                 } else {
-                    echo '<div class="no-products">No products available at the moment.</div>';
+                    echo '<div class="no-products" style="grid-column: 1/-1; text-align: center; padding: 50px; background: white; border-radius: 8px;">No products available at the moment. <a href="init_db.php">Initialize Database</a></div>';
                 }
             ?>
         </div>
     </div>
 
     <script>
-        function addToCart(productId) {
-            alert('Product ' + productId + ' added to cart!');
-            // This would call your cart controller
+        function requireLogin() {
+            alert('Please login to add items to your cart');
+            window.location.href = 'login.php?redirect=products.php';
+        }
+
+        function addToCart(productId, productName) {
+            // Create form data
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            formData.append('quantity', 1);
+
+            // Send request
+            fetch('add-to-cart.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + productName + ' added to cart!');
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ An error occurred while adding to cart');
+            });
+        }
+
+        function toggleWishlist(productId) {
+            const formData = new FormData();
+            formData.append('product_id', productId);
+
+            fetch('wishlist-action.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred');
+            });
         }
     </script>
 </body>
