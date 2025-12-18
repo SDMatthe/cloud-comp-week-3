@@ -112,12 +112,12 @@ try {
                         
                         if (strpos($productLower, 'laptop') !== false) {
                             $productEmoji = '💻';
-                        } elseif (strpos($productLower, 'smartphone') !== false || strpos($productLower, 'phone') !== false) {
-                            $productEmoji = '📱';
+                        } elseif (strpos($productLower, 'desk phone') !== false || strpos($productLower, 'phone') !== false) {
+                            $productEmoji = '☎️';
                         } elseif (strpos($productLower, 'headphones') !== false) {
                             $productEmoji = '🎧';
                         } elseif (strpos($productLower, 'tablet') !== false) {
-                            $productEmoji = '📖';
+                            $productEmoji = '📱';
                         } elseif (strpos($productLower, 'watch') !== false) {
                             $productEmoji = '⌚';
                         } elseif (strpos($productLower, 'camera') !== false) {
