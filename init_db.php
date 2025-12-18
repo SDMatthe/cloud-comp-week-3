@@ -74,8 +74,6 @@ HTML;
         ['Action Camera', '4K action camera for adventure and sports', 799.99, 3, 'Electronics'],
         ['USB-C Hub', 'Multi-port USB-C hub with HDMI and charging', 49.99, 30, 'Accessories'],
         ['Phone Case', 'Durable protective phone case', 19.99, 50, 'Accessories'],
-        ['Screen Protector', 'Tempered glass screen protector', 9.99, 100, 'Accessories'],
-        ['Charging Cable', 'Fast charging USB-C cable', 14.99, 40, 'Accessories'],
     ];
     
     // Insert products
