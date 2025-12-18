@@ -105,7 +105,32 @@ try {
                         }
                         
                         echo '<div class="product-card">';
-                        echo '  <div class="product-image">' . ($product['image_url'] ? htmlspecialchars($product['image_url']) : '📦') . '</div>';
+                        
+                        // Get appropriate emoji based on product name
+                        $productEmoji = '📦'; // default
+                        $productLower = strtolower($product['name']);
+                        
+                        if (strpos($productLower, 'laptop') !== false) {
+                            $productEmoji = '💻';
+                        } elseif (strpos($productLower, 'smartphone') !== false || strpos($productLower, 'phone') !== false) {
+                            $productEmoji = '📱';
+                        } elseif (strpos($productLower, 'headphones') !== false) {
+                            $productEmoji = '🎧';
+                        } elseif (strpos($productLower, 'tablet') !== false) {
+                            $productEmoji = '📖';
+                        } elseif (strpos($productLower, 'watch') !== false) {
+                            $productEmoji = '⌚';
+                        } elseif (strpos($productLower, 'camera') !== false) {
+                            $productEmoji = '📷';
+                        } elseif (strpos($productLower, 'hub') !== false || strpos($productLower, 'cable') !== false) {
+                            $productEmoji = '🔌';
+                        } elseif (strpos($productLower, 'case') !== false) {
+                            $productEmoji = '🛡️';
+                        } elseif (strpos($productLower, 'protector') !== false) {
+                            $productEmoji = '🛡️';
+                        }
+                        
+                        echo '  <div class="product-image">' . $productEmoji . '</div>';
                         echo '  <div class="product-info">';
                         echo '    <div class="product-name">' . htmlspecialchars($product['name']) . '</div>';
                         echo '    <div class="product-description" style="font-size: 12px; color: #666; margin: 5px 0;">' . htmlspecialchars(substr($product['description'], 0, 50)) . '...</div>';
